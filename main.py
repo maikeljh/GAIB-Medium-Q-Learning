@@ -126,7 +126,6 @@ def play_game():
     # Initialize variables
     state = 2
     total_reward = 0
-    path = [2]
 
     # Loop play game while total reward doesn't meet condition
     while True:
@@ -161,9 +160,8 @@ def play_game():
         # Update Q Table
         update_Q(state, action, reward, next_state)
 
-        # Update state and path
+        # Update state
         state = next_state
-        path.append(state)
 
         # Check if total reward meets condition or not
         if total_reward >= 500 or total_reward <= -200:
@@ -172,16 +170,63 @@ def play_game():
         # Check if teleport
         if teleport:
             state = 3
-            path.append(state)
 
-    return total_reward, path
+    return total_reward
+
+# Function to find optimum path
+def find_optimum_path():
+    # Initialize variables
+    optimum_path = [2]
+    state = 2
+    total_reward = 0
+
+    # Iterate Q Table until game finished
+    while True:
+        # Choose action
+        action = np.argmax(Q[state, :])
+
+        # Update next state
+        if action == 0:
+            next_state = state - 1
+        else:
+            next_state = state + 1
+
+        # Check if next state out of range
+        next_state = max(0, min(board_length - 1, next_state))
+
+        # Initialize variable to check teleport
+        teleport = False
+
+        # Check if player gets apple or falls into hole
+        if next_state == 0:
+            reward = -100
+            teleport = True
+        elif next_state == 9:
+            reward = 100
+            teleport = True
+        else:
+            reward = -1
+
+        # Update total reward
+        total_reward += reward
+
+        # Update state
+        state = next_state
+        optimum_path.append(state)
+
+        # Check if total reward meets condition or not
+        if total_reward >= 500 or total_reward <= -200:
+            break
+
+        # Check if teleport
+        if teleport:
+            state = 3
+            optimum_path.append(state)
+    
+    return optimum_path
 
 # Initialize Q Table
 Q = np.zeros((board_length, 2))
-
-# Initialize highest reward and optimum path
-highest_total_reward = 0
-optimum_path = []
 
 # Output Learning Result
 print()
@@ -190,12 +235,7 @@ print("Hasil pembelajaran:")
 # Iterate learning process
 for epoch in range(epochs):
     # Play game
-    total_reward, path = play_game()
-    
-    # Find highest total reward to update optimum path
-    if total_reward > highest_total_reward:
-        highest_total_reward = total_reward
-        optimum_path = path
+    total_reward = play_game()
 
     # Output current total reward
     if (epoch + 1) % 100 == 0:
@@ -204,6 +244,9 @@ for epoch in range(epochs):
 # Output Q Table
 print("\nTabel Q akhir:")
 print(Q)
+
+# Find optimum path
+optimum_path = find_optimum_path()
 
 # Animate the path using Tkinter
 animate_path()
